@@ -1,6 +1,9 @@
 ;main.asm
 global _start; o ponto de entrada é sempre global
+global theta ;variavel global para armazenar o angulo lido
+global velocidade_inicial ;variavel global para armazenar a velocidade inicial lida
 
+extern read_velocidade_inicial ;declaração de função externa
 extern read_theta ;declaração de função externa
 
 
@@ -19,5 +22,5 @@ segment dados
 section code
 ..start:
 call read_theta
-SENO_TABLE[ax]
+SENO_TABLE[theta]
     
