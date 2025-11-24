@@ -3,14 +3,15 @@ segment dados
     global velocidade_inicial
     velocidade_inicial dw 0
 
-    msg_entry db 'Digite o valor do angulo velocidade_inicial (0-90): $'
+    msg_entry db 'Digite o valor da velocidade_inicial: $'
     error db 'Valor invalido. Tente novamente.$'
 
 
 segment code
-    global read_velocidade_inicial; ponto de entrada global
+    global read_V0; ponto de entrada global
+    global velocidade_inicial
 
-read_velocidade_inicial:
+read_V0:
     push bp;salva o base pointer na pilha com o valor antes de entrar no codigo
     mov bp, sp; passa o valor atual do satackpointer pro base pointer depois de salvar o bp na pilha, inutilizado até o momento
     push bx
@@ -31,8 +32,14 @@ read_digit:
     cmp al,13
     je verify_value ;?se for enter, verifica o valor lido
 
+    cmp al, '0'          ; Menor que '0'?
+    jb read_digit        ; SIM: ignora e lê próximo caractere
+    
+    cmp al, '9'          ; Maior que '9'?
+    ja read_digit        ; SIM: ignora e lê próximo caractere
+
     sub al, '0';?converte o caractere lido para valor numerico
-    mov ah,0;?zera o registrador alto
+    xor ah,ah;?zera o registrador alto
 
     ;BX = BX * 10 + AX(ah=0,al=velocidade_inicial digit)
     mov dx, ax ;salvar o digito em dx
@@ -46,8 +53,8 @@ read_digit:
     ;loop read_digit;?decrementa cx e repete se cx != 0,mudei 
 
 verify_value:
-    cmp bx, 90 ;verifica se o valor está entre 0 e 90
-    ja erro
+    cmp bx,1000
+    ja show_error
 
     mov [velocidade_inicial],bx;coloca na variavel global
 
@@ -55,13 +62,14 @@ verify_value:
     pop dx
     pop cx
     pop bx
+    pop bp
     ret;limpa a pilha e retota o ip
 
-error:
+show_error:
     mov ah,9
     mov dx,error
     int 21h
-    jmp read_velocidade_inicial
+    jmp read_V0
 
     mov ah, 0ch
     mov al,0
@@ -72,7 +80,7 @@ error:
     pop cx
     pop bx
     
-    jmp read_velocidade_inicial
+    jmp read_V0
 
 
 
