@@ -1,7 +1,6 @@
 ;main.asm
-; global _start; o ponto de entrada é sempre global
-; global theta ;variavel global para armazenar o angulo lido
-; global velocidade_inicial ;variavel global para armazenar a velocidade inicial lida
+; Miguel Catelan Magalhães - 1029202024 
+; engenharia eletrica 
 
 segment stack stack
     resb 256
@@ -12,6 +11,7 @@ segment dados
 
     ;global theta, velocidade_inicial
     Vy DW 0 ;variavel para armazenar a componente y da velocidade inicial
+    Vx DW 0 ;variavel para armazenar a componente x da velocidade inicial
     ;theta DW 0 ;variavel para armazenar o angulo lido
     ;velocidade_inicial DW 0 ;variavel para armazenar a velocidade inicial lida
 
@@ -34,18 +34,21 @@ section code
 
 
 V_y:
-    ;v0y=velocidade_inicial*seno(theta)
-
+    ; v0y = velocidade_inicial * seno(theta)
     mov bx, word[velocidade_inicial]
-    mul bx ;ax = ax * velocidade_inicial
-
-    ;dividir por 1000 para ajustar a escala
+    mul bx              ; DX:AX = AX(seno) * BX(velocidade)
     mov bx, 1000
-    xor dx, dx ;limpa dx antes da divisão
-    div bx ;ax = ax / 1000
-    mul word[velocidade_inicial]
+    div bx              ; AX = (DX:AX) / 1000
     mov word[Vy], ax
-    ;o resultado final (v0y) está em ax
-    ;Aqui você pode armazenar ou usar o valor de v0y conforme necessário
+    ret
 
-    ret 
+V_x:
+    ; v0x = velocidade_inicial * cosseno(theta)
+    mov bx, word[velocidade_inicial]
+    mov ax, word[sen + 90*2]   ; cosseno = seno(theta + 90)
+    mul bx                     ; DX:AX = AX(cosseno) * BX(velocidade)
+    mov bx, 1000
+    div bx                     ; AX = (DX:AX) / 1000
+    mov word[Vx], ax
+    ret
+Y:

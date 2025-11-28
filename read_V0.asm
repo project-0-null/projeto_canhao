@@ -53,9 +53,6 @@ read_digit:
     ;loop read_digit;?decrementa cx e repete se cx != 0,mudei 
 
 verify_value:
-    cmp bx,1000
-    ja show_error
-
     mov [velocidade_inicial],bx;coloca na variavel global
 
     pop ax
@@ -65,22 +62,7 @@ verify_value:
     pop bp
     ret;limpa a pilha e retota o ip
 
-show_error:
-    mov ah,9
-    mov dx,error
-    int 21h
-    jmp read_V0
 
-    mov ah, 0ch
-    mov al,0
-    int 21h
-
-    pop ax
-    pop dx
-    pop cx
-    pop bx
-    
-    jmp read_V0
 
 
 
