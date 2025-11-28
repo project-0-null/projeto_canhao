@@ -69,16 +69,16 @@ CALCULA_POSICAO_XY:
     PUSH cx
     PUSH dx
 
-    MOV cx, [TEMPO_SCALED] ; cx = t (em centésimos)
+    MOV cx, [t] ; cx = t (em centésimos)
 
     ; ------------------------------------
     ; A. CÁLCULO DE X(t) = V0x * t
     ; X_metros = (Vx * t) / 100 
     ; ------------------------------------
     MOV ax, [Vx]           ; ax = V0x (m/s)
-    IMUL cx                ; dx:ax = Vx * t_scaled (32 bits)
-    MOV bx, [DIVISOR_ESC]  ; bx = 100
-    IDIV bx                ; ax = (Vx * t_scaled) / 100 = X_metros
+    IMUL cx                ; dx:ax = Vx * t (32 bits)
+    MOV bx, [divisor_tempo]  ; bx = 100
+    IDIV bx                ; ax = (Vx * t) / 100 = X_metros
     MOV [POSICAO_X], ax    ; Salva X
 
     ; ------------------------------------
@@ -87,28 +87,28 @@ CALCULA_POSICAO_XY:
 
     ; B.1: Termo V0y * t (Já calculado acima, mas repetindo para clareza)
     MOV ax, [Vy]           ; ax = V0y (m/s)
-    IMUL cx                ; dx:ax = V0y * t_scaled (32 bits)
-    MOV bx, [DIVISOR_ESC]  ; bx = 100
-    MOV [POSICAO_Y], ax    ; Temporariamente, POSICAO_Y = Termo 1 (Quociente)
+    IMUL cx                ; dx:ax = V0y * t (32 bits). salva a parte alta em dx, e a baixa em ax
+    MOV bx, [divisor_tempo]  ; bx = 100
+    MOV [POSICAO_Y], ax    ; (tempporario), POSICAO_Y = Termo 1 (Quociente)
 
     ; B.2: Termo Gravidade (4.9 * t^2)
-    ; Gravidade_Term = (FATOR_G * t_scaled * t_scaled) / (10000 * 100)
-    ; Para simplificar, FATOR_G (490000) já engloba uma parte da escala.
+    ; Gravidade_Term = (divisor_Fg * t * t) / (10000 * 100)
+    ; Para simplificar, divisor_Fg (490000) já engloba uma parte da escala.
 
-    ; Calcula t_scaled * t_scaled
-    MOV ax, cx             ; ax = t_scaled
-    IMUL cx                ; dx:ax = t_scaled * t_scaled (32 bits)
+    ; Calcula t * t
+    MOV ax, cx             ; ax = t
+    IMUL cx                ; dx:ax = t * t (32 bits)
 
-    ; Multiplica por FATOR_G (490000)
+    ; Multiplica por divisor_Fg (490000)
     ; Esta multiplicação 32x16 é complexa e pode estourar, vamos simplificar.
     
     ; Alternativa de Escala (Se t não for muito grande, max 16 bits):
-    MOV ax, [FATOR_G]
-    IMUL cx                 ; ax * t_scaled (usando cx = t_scaled)
+    MOV ax, [divisor_Fg]
+    IMUL cx                 ; ax * t (usando cx = t)
     ; Isso não é suficiente. Vamos usar ax como parte alta e bx como parte baixa da multiplicação 32x16.
 
     ; CÁLCULO GRAV. (Simplificado para 16 bits, assumindo tempo total < 10s)
-    MOV ax, cx             ; ax = t_scaled
+    MOV ax, cx             ; ax = t
     IMUL cx                ; dx:ax = t*t (32 bits)
     
     ; Divide por um divisor grande (e.g., 10000) antes de multiplicar por 4.9
