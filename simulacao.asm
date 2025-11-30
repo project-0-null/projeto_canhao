@@ -1,12 +1,14 @@
 ;codigo para calcular a componente y da posiçao
 segment dados
-    global position_y DW 0 ;variavel para armazenar a posiçao y
-    global position_x DW 0 ;variavel para armazenar a posiçao x
-    tempo DW 0 ;variavel para armazenar o tempo de voo
-    initial_position_y DW 0; para caso eu queria alteral daonde começa 
-    initial_position_x DW 0; para caso eu queria alteral daonde começa
     x_previous DW 0 ;variavel para armazenar a posiçao x anterior
     y_previous DW 0 ;variavel para armazenar a posiçao y anterior
+    global position_y DW 0 ;variavel para armazenar a posiçao y
+    global position_x DW 0 ;variavel para armazenar a posiçao x
+
+    tempo DW 0 ;variavel para armazenar o tempo de voo
+    
+    initial_position_y DW 0; para caso eu queria alteral daonde começa 
+    initial_position_x DW 0; para caso eu queria alteral daonde começa
 
     g DW 490000 ;(g/2) * 10000 para evitar numeros decimais
     divisor_Fg dw 10000 ;divisor para ajustar a gravidade
@@ -133,3 +135,22 @@ CALCULA_POSICAO_XY:
     POP bx
     POP ax
     RET
+
+extern cor 
+extern plot_xy
+
+draw_conversion:
+    push ax
+    push bx
+    push cx
+    push dx
+
+;converte (metros->pixels)
+;pixel = metros*0,32
+
+mov ax,[position_x]
+mov bx, 32
+mul bx ;aqui ax = ax * bx
+mov bx,100
+div bx ;aqui ax = ax / bx
+mov []
