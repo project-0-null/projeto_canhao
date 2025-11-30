@@ -22,6 +22,9 @@ section code
     extern read_o ;declaração de função externa
     extern theta;declaração de variavel externa
     extern velocidade_inicial;declaração de variavel externa
+    extern SIMULA_TIRO ;declaração de função externa
+    extern CONFIGURA_GRAFICOS
+    extern restaura_graficos
 
     global ..start
 
@@ -58,9 +61,8 @@ loop_menu:
 
 op_l:
     ;limpa a tela
-    mov ax, 0003h
-    int 10h
-    jmp op_T
+    call CONFIGURA_GRAFICOS
+    jmp loop_menu
     ret
 
 op_A:
@@ -72,21 +74,23 @@ op_A:
 
 op_V:
     call read_V0
-    call V_x
-    call V_y
     jmp loop_menu
     ret 
 
 op_T:
     ;iniciar a simulação
     ;chamar a função que calcula a posição y e x
+    call V_x
+    call V_y
+    call SIMULA_TIRO
+    jmp loop_menu
     ret
 
 op_S:
+    call restaura_graficos
     ;sair do programa
-    mov ah,4Ch
+    mov ax,4C00h
     int 21h
-    ret
 
 V_y:
     ; v0y = velocidade_inicial * seno(theta)

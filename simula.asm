@@ -1,11 +1,14 @@
-;codigo para calcular a componente y da posiçao
+;codigo para calcular a componente (x,y) da posiçao
 segment dados
     x_previous DW 0 ;variavel para armazenar a posiçao x anterior
     y_previous DW 0 ;variavel para armazenar a posiçao y anterior
-    global position_y DW 0 ;variavel para armazenar a posiçao y
-    global position_x DW 0 ;variavel para armazenar a posiçao x
+    global position_y;variavel para armazenar a posiçao y
+    global position_x;variavel para armazenar a posiçao x
+    position_y DW 1 ;variavel para armazenar a posiçao y
+    position_x DW 1 ;variavel para armazenar a posiçao x
+ 
 
-    tempo DW 0 ;variavel para armazenar o tempo de voo
+    t DW 0 ;variavel para armazenar o tempo de voo
     
     initial_position_y DW 0; para caso eu queria alteral daonde começa 
     initial_position_x DW 0; para caso eu queria alteral daonde começa
@@ -14,7 +17,7 @@ segment dados
     divisor_Fg dw 10000 ;divisor para ajustar a gravidade
     divisor_tempo dw 100 ;divisor para ajustar o tempo
 
-    global SIMULA_TIRO
+    
 
 
 segment code
@@ -22,6 +25,8 @@ segment code
     extern Vy
     extern Vx
     extern sen
+    extern DESENHA_SEGMENTO
+    global SIMULA_TIRO
 
     push bp;salva o base pointer na pilha com o valor antes de entrar no codigo
     mov bp, sp; passa o valor atual do satackpointer pro base pointer depois de salvar o bp na pilha, inutilizado até o momento
@@ -30,11 +35,17 @@ segment code
     push dx
     push ax
 
-    mov word[tempo],0 ;zera o tempo
-    mov word[position_y], word[initial_position_y] ;inicia a posiçao y na posiçao inicial
-    mov word[position_x], word[initial_position_x] ;inicia a posiçao
-    mov word[x_previous], word[initial_position_x] ;inicia a posiçao x anterior na posiçao inicial
-    mov word[y_previous], word[initial_position_y] ;inicia a posiçao
+    mov word[t],0 ;zera o tempo
+    mov ax, word[initial_position_y] ;inicia a posiçao y na posiçao inicial
+    mov word[position_y], ax
+    mov ax, word[initial_position_x] ;inicia a posiçao
+    mov word[position_x], ax
+    mov ax, word[initial_position_x] ;inicia a posiçao x anterior na posiçao inicial
+    mov word[x_previous], ax
+    mov ax, word[initial_position_y] ;inicia a posiçao
+    mov word[y_previous], ax
+    xor ax, ax;zerando para evitar conflitos
+
 
 
 loop_tempo:
@@ -42,11 +53,11 @@ loop_tempo:
     cmp ax,0;<-- ve se ta zero
     JLE loop_fim ;se for menor ou igual a zero, termina a simulaçao
 
-    call calc_position_xy
+    call CALCULA_POSICAO_XY
 
     call draw_conversion
 
-    inc word[tempo] ;incrementa o tempo
+    inc word[t] ;incrementa o tempo
 
     jmp loop_tempo
 
@@ -81,7 +92,7 @@ CALCULA_POSICAO_XY:
     IMUL cx                ; dx:ax = Vx * t (32 bits)
     MOV bx, [divisor_tempo]  ; bx = 100
     IDIV bx                ; ax = (Vx * t) / 100 = X_metros
-    MOV [POSICAO_X], ax    ; Salva X
+    MOV [position_x], ax    ; Salva X
 
     ; ------------------------------------
     ; B. CÁLCULO DE Y(t) = V0y * t - 4.9 * t^2
@@ -91,7 +102,7 @@ CALCULA_POSICAO_XY:
     MOV ax, [Vy]           ; ax = V0y (m/s)
     IMUL cx                ; dx:ax = V0y * t (32 bits). salva a parte alta em dx, e a baixa em ax
     MOV bx, [divisor_tempo]  ; bx = 100
-    MOV [POSICAO_Y], ax    ; (tempporario), POSICAO_Y = Termo 1 (Quociente)
+    MOV [position_y], ax    ; (tempporario), POSICAO_Y = Termo 1 (Quociente)
 
     ; B.2: Termo Gravidade (4.9 * t^2)
     ; Gravidade_Term = (divisor_Fg * t * t) / (10000 * 100)
@@ -125,10 +136,10 @@ CALCULA_POSICAO_XY:
     ; ------------------------------------
     ; C. Subtração Final
     ; ------------------------------------
-    MOV bx, [POSICAO_Y]    ; bx = Termo 1 (V0y * t)
+    MOV bx, [position_y]    ; bx = Termo 1 (V0y * t)
     SUB bx, ax             ; bx = V0y*t - Gravidade_Term
     
-    MOV [POSICAO_Y], bx    ; Salva Y_metros
+    MOV [position_y], bx    ; Salva Y_metros
 
     POP dx
     POP cx
@@ -144,13 +155,62 @@ draw_conversion:
     push bx
     push cx
     push dx
+    push dx
+    push si
+;------------------------------------------------------------------
+    ;converte (metros->pixels)
+    ;pixel = metros*0,32
+    mov ax,[position_x]
+    mov bx, 32
+    mul bx ;aqui ax = ax * bx
+    mov bx,100
+    div bx ;aqui ax = ax / bx
+    mov si,ax ;si = posiçao x em pixels
+;------------------------------------------------------------------
+    mov ax,[position_y]
+    mov bx,32
+    mul bx ;aqui ax = ax * bx
+    mov bx,100
+    div bx ;aqui ax = ax / bx
+    mov cx,ax ;cx = posiçao y em pixels
+;------------------------------------------------------------------
+    ;verifica limtes (transforma em vermhlo)
+    ;cores: (0)preto (4)vermelho
+    mov bl, 0
 
-;converte (metros->pixels)
-;pixel = metros*0,32
+    mov ax, [position_x]
+    cmp ax, 2000;compara limite de tela na horaizontal(x)
+    jg set_red
 
-mov ax,[position_x]
-mov bx, 32
-mul bx ;aqui ax = ax * bx
-mov bx,100
-div bx ;aqui ax = ax / bx
-mov []
+    mov ax, [position_y]
+    cmp ax, 1000;compara limite de tela na vertical(y)
+    jg set_red
+
+    jmp define_cor
+set_red:
+    mov bl, 4 ;vermelho
+define_cor:
+    mov [cor],bl
+;------------------------------------------------------------------
+;desenha a linha
+
+    push word[x_previous]
+    push word[y_previous]
+    push si
+    push cx
+
+    call DESENHA_SEGMENTO
+;------------------------------------------------------------------
+    ;atualiza posiçao anterior
+    mov ax,si
+    mov word[x_previous],ax
+
+    mov ax,cx
+    mov word[y_previous],ax
+
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret

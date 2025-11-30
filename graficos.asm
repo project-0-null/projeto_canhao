@@ -7,6 +7,8 @@ segment code
     mov 		ss,ax
     mov 		sp,stacktop
 
+global CONFIGURA_GRAFICOS
+CONFIGURA_GRAFICOS:;'L',inicio
     mov  		ah,0Fh
     int  		10h
     mov  		[modo_anterior],al   
@@ -14,13 +16,29 @@ segment code
     mov     	al,12h
     mov     	ah,0
     int     	10h
+	ret
 
+global restaura_graficos
+restaura_graficos:;'S'
+	mov     	ah,0
+	mov     	al,[modo_anterior]
+	int     	10h
+	ret
+
+global DESENHA_SEGMENTO
+DESENHA_SEGMENTO:
+; push x1; push y1; push x2; push y2;
+;da pra configurar a cor antes de chamar essa funçao
+	call line
+;a funçao line ja tem um 'ret 8' pra limar os 4 pushes
+ret
 
 ;   fun��o plot_xy
 ;
 ; push x; push y; call plot_xy;  (x<639, y<479)
 ; cor definida na variavel cor
-global plot_xy:
+global plot_xy
+plot_xy:
 		push		bp
 		mov		bp,sp
 		pushf
@@ -51,7 +69,8 @@ global plot_xy:
 ;    fun��o circle
 ;	 push xc; push yc; push r; call circle;  (xc+r<639,yc+r<479)e(xc-r>0,yc-r>0)
 ; cor definida na variavel cor
-global circle:
+global circle
+circle:
 	push 	bp
 	mov	 	bp,sp
 	pushf                        ;coloca os flags na pilha
@@ -176,9 +195,10 @@ plotar:
 	call plot_xy		;toma conta do quarto octante
 	
 	cmp		cx,dx
-	jb		fim_circle  ;se cx (y) est� abaixo de dx (x), termina     
-	jmp		stay		;se cx (y) est� acima de dx (x), continua no loop
-	
+	jnb		continua  ;mudei por causa das lmitaçoes de jb;agora continua se nao for menor
+	jmp		fim_circle	;se cx (y) est� abaixo de dx (x), termina
+continua:
+	jmp		stay		;se cx (y) est� acima de dx
 	
 fim_circle:
 	pop		di
@@ -196,7 +216,8 @@ fim_circle:
 ;    fun��o full_circle
 ;	 push xc; push yc; push r; call full_circle;  (xc+r<639,yc+r<479)e(xc-r>0,yc-r>0)
 ; cor definida na variavel cor					  
-global full_circle:
+global full_circle
+full_circle:
 	push 	bp
 	mov	 	bp,sp
 	pushf                        ;coloca os flags na pilha
@@ -307,9 +328,10 @@ plotar_full:
 	call	line
 	
 	cmp		cx,dx
-	jb		fim_full_circle  ;se cx (y) est� abaixo de dx (x), termina     
-	jmp		stay_full		;se cx (y) est� acima de dx (x), continua no loop
-	
+	jnb		 continua_full	;se ano for menor ele continua, tive que mudar pela lmitaçao de byte do jb   
+	jmp		fim_full_circle 	;se cx (y) est� abaixo de dx (x), termina
+continua_full:
+	jmp		stay_full		;se cx (y) est� acima de dx
 	
 fim_full_circle:
 	pop		di
@@ -327,7 +349,8 @@ fim_full_circle:
 ;   fun��o line
 ;
 ; push x1; push y1; push x2; push y2; call line;  (x<639, y<479)
-global line:
+global line
+line:
 		push		bp
 		mov		bp,sp
 		pushf                        ;coloca os flags na pilha
@@ -493,7 +516,8 @@ fim_line:
 ;
 ; al= caracter a ser escrito
 ; cor definida na variavel cor
-global caracter:
+global caracter
+caracter:
 		pushf
 		push 		ax
 		push 		bx
@@ -520,7 +544,8 @@ global caracter:
 
 segment data
 
-global cor		db		branco_intenso
+global cor
+cor		db		branco_intenso
 
 ;	I R G B COR
 ;	0 0 0 0 preto
@@ -557,9 +582,13 @@ magenta_claro	equ		13
 amarelo		equ		14
 branco_intenso	equ		15
 
-global modo_anterior	db		0
-global deltax        db		0
-global deltay        db		0
+global modo_anterior
+global deltax
+global deltay
+
+modo_anterior	db		0
+deltax        db		0
+deltay        db		0
 ;*************************************************************************
 segment stack stack
     		resb 		512
