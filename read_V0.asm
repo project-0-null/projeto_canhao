@@ -1,7 +1,7 @@
 ; função de entrada para o angulo velocidade_inicial
 segment dados
-    global velocidade_inicial
-    velocidade_inicial dw 0
+    ;global velocidade_inicial
+    extern velocidade_inicial
 
     msg_entry db 'Digite o valor da velocidade_inicial: $'
     error db 'Valor invalido. Tente novamente.$'

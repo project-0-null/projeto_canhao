@@ -413,7 +413,6 @@ amarelo		equ		14
 branco_intenso	equ		15
 
 modo_anterior	db		0
-linha   	dw  		0
 coluna  	dw  		0
 deltax		dw		0
 deltay		dw		0	
@@ -422,5 +421,3 @@ mens    	db  		'Funcao Grafica'
 segment stack stack
     		resb 		512
 stacktop:
-
-

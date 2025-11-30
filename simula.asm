@@ -28,6 +28,8 @@ segment code
     extern DESENHA_SEGMENTO
     global SIMULA_TIRO
 
+SIMULA_TIRO:
+
     push bp;salva o base pointer na pilha com o valor antes de entrar no codigo
     mov bp, sp; passa o valor atual do satackpointer pro base pointer depois de salvar o bp na pilha, inutilizado até o momento
     push bx
@@ -47,17 +49,16 @@ segment code
     xor ax, ax;zerando para evitar conflitos
 
 
-
 loop_tempo:
-    MOV ax,[position_y]
-    cmp ax,0;<-- ve se ta zero
-    JLE loop_fim ;se for menor ou igual a zero, termina a simulaçao
-
     call CALCULA_POSICAO_XY
 
     call draw_conversion
-
+    call delay
     inc word[t] ;incrementa o tempo
+
+    MOV ax,[position_y]
+    cmp ax,0;<-- ve se ta zero
+    JL loop_fim ;se for menor ou igual a zero, termina a simulaçao
 
     jmp loop_tempo
 
@@ -82,64 +83,41 @@ CALCULA_POSICAO_XY:
     PUSH cx
     PUSH dx
 
-    MOV cx, [t] ; cx = t (em centésimos)
+    MOV cx, [t] ; cx = t (em décimos de segundo, para precisão)
 
     ; ------------------------------------
     ; A. CÁLCULO DE X(t) = V0x * t
-    ; X_metros = (Vx * t) / 100 
     ; ------------------------------------
     MOV ax, [Vx]           ; ax = V0x (m/s)
-    IMUL cx                ; dx:ax = Vx * t (32 bits)
-    MOV bx, [divisor_tempo]  ; bx = 100
-    IDIV bx                ; ax = (Vx * t) / 100 = X_metros
+    IMUL cx                ; dx:ax = Vx * t
+    MOV bx, 10             ; Divisor para ajustar o tempo (t está em décimos)
+    IDIV bx                ; ax = (Vx * t) / 10 = X em metros
     MOV [position_x], ax    ; Salva X
 
     ; ------------------------------------
-    ; B. CÁLCULO DE Y(t) = V0y * t - 4.9 * t^2
+    ; B. CÁLCULO DE Y(t) = (V0y * t) - (g/2 * t^2)
     ; ------------------------------------
 
-    ; B.1: Termo V0y * t (Já calculado acima, mas repetindo para clareza)
+    ; B.1: Calcula o termo (V0y * t)
     MOV ax, [Vy]           ; ax = V0y (m/s)
-    IMUL cx                ; dx:ax = V0y * t (32 bits). salva a parte alta em dx, e a baixa em ax
-    MOV bx, [divisor_tempo]  ; bx = 100
-    MOV [position_y], ax    ; (tempporario), POSICAO_Y = Termo 1 (Quociente)
+    IMUL cx                ; dx:ax = V0y * t
+    MOV bx, 10             ; Divisor do tempo
+    IDIV bx                ; ax = (V0y * t) / 10
+    MOV si, ax             ; Guarda o resultado em SI: si = V0y*t
 
-    ; B.2: Termo Gravidade (4.9 * t^2)
-    ; Gravidade_Term = (divisor_Fg * t * t) / (10000 * 100)
-    ; Para simplificar, divisor_Fg (490000) já engloba uma parte da escala.
-
-    ; Calcula t * t
+    ; B.2: Calcula o termo da gravidade (g/2 * t^2) -> (4.9 * t^2)
     MOV ax, cx             ; ax = t
-    IMUL cx                ; dx:ax = t * t (32 bits)
+    IMUL cx                ; dx:ax = t*t
+    MOV bx, 49             ; bx = 4.9 * 10
+    IMUL bx                ; dx:ax = (t*t) * 49
+    MOV bx, 1000            ; Divisor para (t*t/100) e (4.9*10)
+    IDIV bx                ; ax = (t*t * 49) / 100 = 4.9 * (t/10)^2
 
-    ; Multiplica por divisor_Fg (490000)
-    ; Esta multiplicação 32x16 é complexa e pode estourar, vamos simplificar.
-    
-    ; Alternativa de Escala (Se t não for muito grande, max 16 bits):
-    MOV ax, [divisor_Fg]
-    IMUL cx                 ; ax * t (usando cx = t)
-    ; Isso não é suficiente. Vamos usar ax como parte alta e bx como parte baixa da multiplicação 32x16.
-
-    ; CÁLCULO GRAV. (Simplificado para 16 bits, assumindo tempo total < 10s)
-    MOV ax, cx             ; ax = t
-    IMUL cx                ; dx:ax = t*t (32 bits)
-    
-    ; Divide por um divisor grande (e.g., 10000) antes de multiplicar por 4.9
-    MOV bx, 1000           ; Divisor para reduzir t*t
-    IDIV bx                ; ax = t*t / 1000
-
-    MOV bx, 49             ; 4.9 * 10
-    IMUL bx                ; ax = (t*t/1000) * 49 (Aproximado)
-    MOV bx, 10             ; Divide pelo 10 do 4.9*10
-    IDIV bx                ; ax = Termo Gravidade em metros
-    
     ; ------------------------------------
     ; C. Subtração Final
     ; ------------------------------------
-    MOV bx, [position_y]    ; bx = Termo 1 (V0y * t)
-    SUB bx, ax             ; bx = V0y*t - Gravidade_Term
-    
-    MOV [position_y], bx    ; Salva Y_metros
+    SUB si, ax             ; si = (V0y*t) - (termo da gravidade)
+    MOV [position_y], si   ; Salva a posição Y final
 
     POP dx
     POP cx
@@ -155,28 +133,28 @@ draw_conversion:
     push bx
     push cx
     push dx
-    push dx
+
     push si
 ;------------------------------------------------------------------
     ;converte (metros->pixels)
     ;pixel = metros*0,32
     mov ax,[position_x]
-    mov bx, 32
+    mov bx, 32;aq tb
     mul bx ;aqui ax = ax * bx
     mov bx,100
-    div bx ;aqui ax = ax / bx
+    div bx ;aqui ax = ax / bx ;desfazer essa merda dps pq PQP
     mov si,ax ;si = posiçao x em pixels
 ;------------------------------------------------------------------
     mov ax,[position_y]
-    mov bx,32
+    mov bx,32;aq tb
     mul bx ;aqui ax = ax * bx
     mov bx,100
-    div bx ;aqui ax = ax / bx
+    div bx ;aqui ax = ax / bx desfazer essa merda dps pq PQP
     mov cx,ax ;cx = posiçao y em pixels
 ;------------------------------------------------------------------
     ;verifica limtes (transforma em vermhlo)
     ;cores: (0)preto (4)vermelho
-    mov bl, 0
+    mov bl, 15
 
     mov ax, [position_x]
     cmp ax, 2000;compara limite de tela na horaizontal(x)
@@ -213,4 +191,23 @@ define_cor:
     pop cx
     pop bx
     pop ax
+    ret
+
+delay:
+    push cx
+    push dx
+    push ax
+    
+    ; Ajuste esse valor para mais rápido/devagar (FFFFh é o máximo para 1 loop)
+    mov cx, 0010h
+delay_loop1:
+    mov dx, 0500h ; Loop interno
+delay_loop2:
+    dec dx
+    jnz delay_loop2
+    loop delay_loop1
+    
+    pop ax
+    pop dx
+    pop cx
     ret

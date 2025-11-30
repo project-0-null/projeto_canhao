@@ -1,11 +1,11 @@
 ;parte grafica do projeto:
 
-segment code
-    mov 		ax,data
-    mov 		ds,ax
-    mov 		ax,stack
-    mov 		ss,ax
-    mov 		sp,stacktop
+; segment code
+;     mov 		ax,data
+;     mov 		ds,ax
+;     mov 		ax,stack
+;     mov 		ss,ax
+;     mov 		sp,stacktop
 
 global CONFIGURA_GRAFICOS
 CONFIGURA_GRAFICOS:;'L',inicio
@@ -29,7 +29,7 @@ global DESENHA_SEGMENTO
 DESENHA_SEGMENTO:
 ; push x1; push y1; push x2; push y2;
 ;da pra configurar a cor antes de chamar essa funçao
-	call line
+	jmp line
 ;a funçao line ja tem um 'ret 8' pra limar os 4 pushes
 ret
 
@@ -542,7 +542,122 @@ caracter:
 		ret
 ;_____________________________________________________________________________
 
-segment data
+global desenha_interface
+desenha_interface:
+	;desenha o menu
+push ax
+push bx
+push cx
+push dx
+
+mov byte[cor],branco_intenso
+
+;retangulo 
+	call desenha_retangulo_1
+	call desenha_retangulo_2
+	call desenha_retangulo_3
+	call desenha_retangulo_4
+
+
+pop dx
+pop cx
+pop bx
+pop ax
+ret
+
+desenha_retangulo_1:
+	push word 20  ; x1
+    push word 10 ; y1
+    push word 100; x2
+    push word 10 ; y2
+    call line
+    
+    push word 100
+    push word 10
+    push word 100
+    push word 40
+    call line
+    
+    push word 20
+    push word 40
+    push word 100
+    push word 40
+    call line
+    
+    push word 20
+    push word 10
+    push word 20
+    push word 40
+    call line
+    ret
+desenha_retangulo_2:
+	push word 120
+    push word 10
+    push word 200
+    push word 10
+    call line
+    push word 200
+    push word 10
+    push word 200
+    push word 40
+    call line
+    push word 120
+    push word 40
+    push word 200
+    push word 40
+    call line
+    push word 120
+    push word 10
+    push word 120
+    push word 40
+    call line
+    ret
+desenha_retangulo_3:
+	push word 400
+    push word 10
+    push word 500
+    push word 10
+    call line
+    push word 500
+    push word 10
+    push word 500
+    push word 40
+    call line
+    push word 400
+    push word 40
+    push word 500
+    push word 40
+    call line
+    push word 400
+    push word 10
+    push word 400
+    push word 40
+    call line
+    ret
+desenha_retangulo_4:
+	push word 520
+    push word 10
+    push word 620
+    push word 10
+    call line
+    push word 620
+    push word 10
+    push word 620
+    push word 40
+    call line
+    push word 520
+    push word 40
+    push word 620
+    push word 40
+    call line
+    push word 520
+    push word 10
+    push word 520
+    push word 40
+    call line
+    ret
+
+segment dados
 
 global cor
 cor		db		branco_intenso

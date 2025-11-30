@@ -76,8 +76,8 @@
 
 ; função de entrada para o angulo theta
 segment dados
-    global theta
-    theta dw 0
+    ;global theta
+    extern theta
 
     msg_entry db 'Digite o valor do angulo theta (0-90): $'
     error_msg db 0Dh, 0Ah, 'Valor invalido. Tente novamente.$'
@@ -96,7 +96,7 @@ read_o:
 
     ; Exibir mensagem
     mov ah, 9
-    lea dx, [msg_entry]  ; ou mov dx, msg_entry (depende do assembler)
+    lea dx, [msg_entry]  ; 
     int 21h
 
     mov bx, 0
@@ -105,7 +105,7 @@ read_digit:
     mov ah, 1
     int 21h
     
-    cmp al, 13           ; Enter?
+    cmp al, 13           ; Enter
     je verify_value
     
     cmp al, '0'          ; Verifica se é dígito válido
