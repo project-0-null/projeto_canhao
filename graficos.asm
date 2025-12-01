@@ -558,6 +558,19 @@ mov byte[cor],branco_intenso
 	call desenha_retangulo_3
 	call desenha_retangulo_4
 
+	;rotulos
+	mov cx, 12
+	mov bx, 0
+	mov     dl, 2;horizontal
+	mov     	dh, 26	;vertical
+	mov byte[cor],amarelo
+l567:
+	call cursor
+	mov     al,[bx+r_velocidade]
+	call caracter
+	inc     bx			;proximo caracter
+	inc		dl			;avanca a coluna
+	loop    l567
 
 pop dx
 pop cx
@@ -567,95 +580,165 @@ ret
 
 desenha_retangulo_1:
 	push word 20  ; x1
-    push word 10 ; y1
-    push word 100; x2
-    push word 10 ; y2
+    push word 5 ; y1
+    push word 116; x2
+    push word 5 ; y2
     call line
     
-    push word 100
-    push word 10
-    push word 100
-    push word 40
-    call line
-    
-    push word 20
-    push word 40
-    push word 100
-    push word 40
+    push word 116
+    push word 5
+    push word 116
+    push word 30
     call line
     
     push word 20
-    push word 10
+    push word 30
+    push word 116
+    push word 30
+    call line
+    
     push word 20
-    push word 40
+    push word 5
+    push word 20
+    push word 30
     call line
     ret
 desenha_retangulo_2:
 	push word 120
-    push word 10
+    push word 5
     push word 200
-    push word 10
+    push word 5
     call line
     push word 200
-    push word 10
+    push word 5
     push word 200
-    push word 40
+    push word 30
     call line
     push word 120
-    push word 40
+    push word 30
     push word 200
-    push word 40
+    push word 30
     call line
     push word 120
-    push word 10
+    push word 5
     push word 120
-    push word 40
+    push word 30
     call line
     ret
 desenha_retangulo_3:
 	push word 400
-    push word 10
+    push word 5
     push word 500
-    push word 10
+    push word 5
     call line
     push word 500
-    push word 10
+    push word 5
     push word 500
-    push word 40
+    push word 30
     call line
     push word 400
-    push word 40
+    push word 30
     push word 500
-    push word 40
+    push word 30
     call line
     push word 400
-    push word 10
+    push word 5
     push word 400
-    push word 40
+    push word 30
     call line
     ret
 desenha_retangulo_4:
 	push word 520
-    push word 10
+    push word 5
     push word 620
-    push word 10
+    push word 5
     call line
     push word 620
-    push word 10
+    push word 5
     push word 620
-    push word 40
+    push word 30
     call line
     push word 520
-    push word 40
+    push word 30
     push word 620
-    push word 40
+    push word 30
     call line
     push word 520
-    push word 10
+    push word 5
     push word 520
-    push word 40
+    push word 30
     call line
     ret
+
+global desenha_borda
+desenha_borda:
+;faz um quadrado de 640x440
+push ax
+push bx
+push cx
+push dx
+
+mov byte[cor],branco_intenso
+
+	; Linha inferior do retângulo
+	push word 40	; x1
+	push word 400	; y1
+	push word 600	; x2
+	push word 400	; y2
+	call line
+
+	; Linha superior do retângulo
+	push word 40	; x1
+	push word 100	; y1
+	push word 600	; x2
+	push word 100	; y2
+	call line
+
+	; Linha esquerda do retângulo
+	push word 40	; x1
+	push word 100	; y1
+	push word 40	; x2
+	push word 400	; y2
+	call line
+
+	; Linha direita do retângulo
+	push word 600	; x1
+	push word 100	; y1
+	push word 600	; x2
+	push word 400	; y2
+	call line
+
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+;--------------------------------------------------------------------------------
+;   fun��o cursor
+;
+; dh = linha (0-29) e  dl=coluna  (0-79)
+cursor:
+		pushf
+		push 		ax
+		push 		bx
+		push		cx
+		push		dx
+		push		si
+		push		di
+		push		bp
+		mov     	ah,2
+		mov     	bh,0
+		int     	10h
+		pop		bp
+		pop		di
+		pop		si
+		pop		dx
+		pop		cx
+		pop		bx
+		pop		ax
+		popf
+		ret
+;_____________________________________________________________________________
 
 segment dados
 
@@ -704,6 +787,10 @@ global deltay
 modo_anterior	db		0
 deltax        db		0
 deltay        db		0
+r_velocidade	db		' Velocidade:'
+r_angulo 	db	'Angulo: '
+r_distancia db 'Distancia: '
+r_altura db 'Altura: '
 ;*************************************************************************
 segment stack stack
     		resb 		512

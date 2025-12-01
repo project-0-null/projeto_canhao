@@ -1,7 +1,7 @@
 ;codigo para calcular a componente (x,y) da posiçao
 segment dados
-    x_previous DW 0 ;variavel para armazenar a posiçao x anterior
-    y_previous DW 0 ;variavel para armazenar a posiçao y anterior
+    x_previous DW 80 ;variavel para armazenar a posiçao x anterior
+    y_previous DW 80 ;variavel para armazenar a posiçao y anterior
     global position_y;variavel para armazenar a posiçao y
     global position_x;variavel para armazenar a posiçao x
     position_y DW 1 ;variavel para armazenar a posiçao y
@@ -10,8 +10,8 @@ segment dados
 
     t DW 0 ;variavel para armazenar o tempo de voo
     
-    initial_position_y DW 0; para caso eu queria alteral daonde começa 
-    initial_position_x DW 0; para caso eu queria alteral daonde começa
+    initial_position_y DW 100; para caso eu queria alteral daonde começa 
+    initial_position_x DW 40; para caso eu queria alteral daonde começa
 
     g DW 490000 ;(g/2) * 10000 para evitar numeros decimais
     divisor_Fg dw 10000 ;divisor para ajustar a gravidade
@@ -38,16 +38,19 @@ SIMULA_TIRO:
     push ax
 
     mov word[t],0 ;zera o tempo
-    mov ax, word[initial_position_y] ;inicia a posiçao y na posiçao inicial
-    mov word[position_y], ax
-    mov ax, word[initial_position_x] ;inicia a posiçao
-    mov word[position_x], ax
     mov ax, word[initial_position_x] ;inicia a posiçao x anterior na posiçao inicial
+    mov bx, 2
+    mul bx
+    add ax,10;offset x(pixels)
     mov word[x_previous], ax
-    mov ax, word[initial_position_y] ;inicia a posiçao
-    mov word[y_previous], ax
-    xor ax, ax;zerando para evitar conflitos
 
+    mov ax, word[initial_position_y] ;inicia a posiçao
+    mov bx, 2
+    mul bx
+    add ax,40;offset y(pixels)
+    mov word[y_previous], ax
+    xor ax,ax
+    xor bx,bx
 
 loop_tempo:
     call CALCULA_POSICAO_XY
@@ -90,9 +93,11 @@ CALCULA_POSICAO_XY:
     ; ------------------------------------
     MOV ax, [Vx]           ; ax = V0x (m/s)
     IMUL cx                ; dx:ax = Vx * t
-    MOV bx, 10             ; Divisor para ajustar o tempo (t está em décimos)
+    MOV bx, 40             ; Divisor para ajustar o tempo (t está em décimos)
     IDIV bx                ; ax = (Vx * t) / 10 = X em metros
-    MOV [position_x], ax    ; Salva X
+    add ax, [initial_position_x] ; Adiciona a posição inicial x0
+    MOV [position_x], ax   ; Salva X
+
 
     ; ------------------------------------
     ; B. CÁLCULO DE Y(t) = (V0y * t) - (g/2 * t^2)
@@ -101,7 +106,7 @@ CALCULA_POSICAO_XY:
     ; B.1: Calcula o termo (V0y * t)
     MOV ax, [Vy]           ; ax = V0y (m/s)
     IMUL cx                ; dx:ax = V0y * t
-    MOV bx, 10             ; Divisor do tempo
+    MOV bx, 40             ; Divisor do tempo
     IDIV bx                ; ax = (V0y * t) / 10
     MOV si, ax             ; Guarda o resultado em SI: si = V0y*t
 
@@ -110,13 +115,14 @@ CALCULA_POSICAO_XY:
     IMUL cx                ; dx:ax = t*t
     MOV bx, 49             ; bx = 4.9 * 10
     IMUL bx                ; dx:ax = (t*t) * 49
-    MOV bx, 1000            ; Divisor para (t*t/100) e (4.9*10)
+    MOV bx, 16000          ; Divisor para (t*t/100) e (4.9*10); to dividino muito mais pq agora t corre 4x mais rapido precisamos dividir 4x mais para t ser em segundos que é o usado na formula
     IDIV bx                ; ax = (t*t * 49) / 100 = 4.9 * (t/10)^2
 
     ; ------------------------------------
     ; C. Subtração Final
     ; ------------------------------------
     SUB si, ax             ; si = (V0y*t) - (termo da gravidade)
+    add si, [initial_position_y] ; Adiciona a posição inicial y0
     MOV [position_y], si   ; Salva a posição Y final
 
     POP dx

@@ -32,6 +32,7 @@ section code
     extern CONFIGURA_GRAFICOS
     extern restaura_graficos
     extern desenha_interface
+    extern desenha_borda
 
     global ..start
 
@@ -92,6 +93,7 @@ op_T:
 
     call CONFIGURA_GRAFICOS ; 1. Entra no modo gráfico
     call desenha_interface ; Desenha a interface gráfica
+    call desenha_borda    ; Desenha a borda da área de simulação
     call V_x            ; Calcula a componente Vx da velocidade inicial
     call V_y            ; Calcula a componente Vy da velocidade inicial
 
